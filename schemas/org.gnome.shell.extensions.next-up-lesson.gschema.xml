@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<schemalist>
+    <schema id="org.gnome.shell.extensions.next-up-lesson" path="/org/gnome/shell/extensions/next-up-lesson/">
+        <key name="update-interval" type="i">
+            <default>13</default>
+            <summary>Update Interval</summary>
+            <description>Padding between windows</description>
+        </key>
+        <key name="notify" type="b">
+            <default>true</default>
+            <summary>Notify</summary>
+            <description>Whether to notify you when a Lesson ends</description>
+        </key>
+        <key name="lesson-file-path" type="s">
+            <default>'~/.config/lessons.json'</default>
+            <summary>Lesson File Path</summary>
+            <description>Path to the file containing the lessons</description>
+        </key>
+    </schema>
+</schemalist>
