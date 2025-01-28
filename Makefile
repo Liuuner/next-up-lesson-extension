@@ -25,6 +25,8 @@ install: $(NAME).zip
 	@touch ~/.local/share/gnome-shell/extensions/$(NAME)@$(DOMAIN)
 	@rm -rf ~/.local/share/gnome-shell/extensions/$(NAME)@$(DOMAIN)
 	@mv dist ~/.local/share/gnome-shell/extensions/$(NAME)@$(DOMAIN)
+	@rm -rf dist
+	@rm -rf $(NAME).zip
 
 clean:
 	@rm -rf dist node_modules $(NAME).zip

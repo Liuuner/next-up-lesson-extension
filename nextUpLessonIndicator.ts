@@ -101,7 +101,8 @@ export class LessonStatusIndicator extends PanelMenu.Button {
 
     async _loadLessons() {
         try {
-            const module = await import("./lessons.js");
+            // use a cache buster to force reload
+            const module = await import(`./lessons.js?cacheBuster=${Date.now()}`);
             this._lessons = module.default; // Access the default export if applicable
         } catch (error) {
             Main.notify("Failed to load lessons");
