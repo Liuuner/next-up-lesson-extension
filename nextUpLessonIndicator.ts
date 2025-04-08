@@ -22,6 +22,18 @@ function getDayName(dayNumber: number): string {
     return daysOfWeek[dayNumber - 1];
 }
 
+function getTimeDifference(targetTime: string) {
+    const now = new Date();
+    const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
+
+    // Parse the target time (in "HH:mm" format)
+    const [targetHours, targetMinutes] = targetTime.split(":").map(Number);
+    const targetTimeInMinutes = targetHours * 60 + targetMinutes;
+
+    // Calculate the difference
+    return targetTimeInMinutes - currentTimeInMinutes;
+}
+
 export class LessonStatusIndicator extends PanelMenu.Button {
     label: St.Label;
     _lessonBefore: Lesson | undefined = undefined;
@@ -79,6 +91,7 @@ export class LessonStatusIndicator extends PanelMenu.Button {
 
         this._timer = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, this._settings.get_int("update-interval"),
             () => {
+                this._lessonBefore = undefined;
                 this._updateLesson();
                 return GLib.SOURCE_CONTINUE;
             });
@@ -138,23 +151,38 @@ export class LessonStatusIndicator extends PanelMenu.Button {
                     this._notify(lesson);
                     this._lessonBefore = lesson;
                 }
-                return `${lesson.name} ends at ${lesson.end}`;
+                return this.buildLessonString(lesson, "ends");
             }
             if (currentTime < lesson.start) {
                 if (this._lessonBefore !== lesson) {
                     this._notify(lesson);
                     this._lessonBefore = lesson;
                 }
-                return `${lesson.name} starts at ${lesson.start}`;
+                return this.buildLessonString(lesson, "starts");
             }
         }
         this._lessonBefore = undefined;
         return "No more lessons today";
     }
 
+    buildLessonString(lesson: Lesson, action: "starts" | "ends") {
+        const minuteThreshold = this._settings.get_int("minute-maximum");
+        const targetTime = action === "starts" ? lesson.start : lesson.end;
+        const timeDifference = getTimeDifference(targetTime);
+
+        if (timeDifference > minuteThreshold) {
+            return `${lesson.name} ${action} at ${targetTime}`;
+        }
+        if (minuteThreshold > 60) {
+            const hours = Math.floor(timeDifference / 60);
+            const minutes = timeDifference % 60;
+            return `${lesson.name} ${action} in ${hours}h ${minutes}min`;
+        }
+        return `${lesson.name} ${action} in ${timeDifference}min`;
+    }
+
     _updateLesson() {
         this.label.set_text(this.getCurrentLesson());
-        return true;
     }
 
     destroy() {

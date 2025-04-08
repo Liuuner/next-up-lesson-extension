@@ -6,6 +6,11 @@
             <summary>Update Interval</summary>
             <description>Padding between windows</description>
         </key>
+        <key name="minute-maximum" type="i">
+            <default>20</default>
+            <summary>Maximum Minute ka</summary>
+            <description>Threshold from which it starts to "in x minutes" instead of "at hh:mm"</description>
+        </key>
         <key name="notify" type="b">
             <default>true</default>
             <summary>Notify</summary>

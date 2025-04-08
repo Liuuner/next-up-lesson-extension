@@ -14,39 +14,39 @@ export default class GnomeRectanglePreferences extends ExtensionPreferences {
             iconName: 'dialog-information-symbolic',
         });
 
-        const animationGroup = new Adw.PreferencesGroup({
-            title: _('Animation'),
-            description: _('Configure move/resize animation'),
+        const notifyGroup = new Adw.PreferencesGroup({
+            title: _('Notifications'),
+            // description: _('Configure move/resize animation'),
         });
-        page.add(animationGroup);
+        page.add(notifyGroup);
 
-        const animationEnabled = new Adw.SwitchRow({
+        const notificationsEnabled = new Adw.SwitchRow({
             title: _('Enabled'),
-            subtitle: _('Wether to animate windows'),
+            subtitle: _('Wether to notify you'),
         });
-        animationGroup.add(animationEnabled);
+        notifyGroup.add(notificationsEnabled);
 
         const paddingGroup = new Adw.PreferencesGroup({
-            title: _('Paddings'),
-            description: _('Configure the padding between windows'),
+            title: _('Minutes Threshold'),
+            description: _('Threshold from which it starts to "in x minutes" instead of "at hh:mm"'),
         });
         page.add(paddingGroup);
 
         const paddingInner = new Adw.SpinRow({
-            title: _('Inner'),
-            subtitle: _('Padding between windows'),
+            title: _('Minutes'),
+            // subtitle: _(''),
             adjustment: new Gtk.Adjustment({
-                lower: 0,
-                upper: 1000,
-                stepIncrement: 1
+                lower: -1,
+                upper: 1440,
+                stepIncrement: 10
             })
         });
         paddingGroup.add(paddingInner);
 
         window.add(page)
 
-        this._settings!.bind('animate', animationEnabled, 'active', Gio.SettingsBindFlags.DEFAULT);
-        this._settings!.bind('padding-inner', paddingInner, 'value', Gio.SettingsBindFlags.DEFAULT);
+        this._settings!.bind('notify', notificationsEnabled, 'active', Gio.SettingsBindFlags.DEFAULT);
+        this._settings!.bind('minute-maximum', paddingInner, 'value', Gio.SettingsBindFlags.DEFAULT);
 
         return Promise.resolve();
     }
