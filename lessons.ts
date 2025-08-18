@@ -4,7 +4,7 @@ export default {
         { start: "08:25", end: "09:10", name: "Innovative Projekte" },
         { start: "09:15", end: "10:00", name: "Verteilte Systeme" },
         { start: "10:20", end: "11:05", name: "Verteilte Systeme" },
-        { start: "11:10", end: "11:55", name: "Sport" },
+        { start: "11:30", end: "12:15", name: "Sport" },
         { start: "13:45", end: "14:30", name: "DevOps" },
         { start: "14:35", end: "15:20", name: "DevOps" },
         { start: "15:35", end: "16:20", name: "Testen" },
