@@ -1,4 +1,8 @@
 ### GET lessons
 # @no-cookie-jar
-GET https://tantalos.webuntis.com/WebUntis/api/public/timetable/weekly/data?elementType=1&elementId=349&date=2025-02-17&formatId=0
+GET https://tantalos.webuntis.com/WebUntis/api/public/timetable/weekly/data?
+    elementType=1&
+    elementId=349&
+    date=2025-04-07&
+    formatId=0
 Cookie: schoolname=_Ym1zdw==

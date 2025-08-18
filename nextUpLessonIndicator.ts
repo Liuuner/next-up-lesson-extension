@@ -7,6 +7,7 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import Gio from "gi://Gio";
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
+
 type Lesson = {
     start: string,
     end: string,
@@ -20,6 +21,47 @@ function getDayName(dayNumber: number): string {
         throw new Error("Invalid day number");
     }
     return daysOfWeek[dayNumber - 1];
+}
+
+function stringToColourAndBgColour(str: string): {
+    colour: string,
+    backgroundColourHex: string,
+    backgroundColour: { red: number, green: number, blue: number }
+} {
+    let hash = 0;
+    str.split('').forEach(char => {
+        hash = char.charCodeAt(0) + ((hash << 5) - hash)
+    })
+
+    const redValue = (hash >> (0 * 8)) & 0xff
+    const greenValue = (hash >> (1 * 8)) & 0xff
+    const blueValue = (hash >> (2 * 8)) & 0xff
+
+    let backgroundColourHex = '#'
+    backgroundColourHex += redValue.toString(16).padStart(2, '0')
+    backgroundColourHex += greenValue.toString(16).padStart(2, '0')
+    backgroundColourHex += blueValue.toString(16).padStart(2, '0')
+
+    const isColourBright = (redValue + greenValue + blueValue) > 510
+
+    return {
+        backgroundColourHex,
+        backgroundColour: {red: redValue, green: greenValue, blue: blueValue},
+        colour: isColourBright ? "black" : "white"
+    }
+}
+
+function getMinutesFromTimeString(time: string) {
+    const [h, m] = time.split(":");
+    return (Number(h) * 60) + Number(m);
+}
+
+function startEndTimeToHeight(start: string, end: string) {
+    const startMinutes = getMinutesFromTimeString(start)
+    const endMinutes = getMinutesFromTimeString(end)
+    const res = 34 * (endMinutes - startMinutes) / 45;
+    console.debug(`Start: ${start}, End: ${end}, res: ${res}, diff: ${endMinutes - startMinutes}`)
+    return res - 1; // substract border width (omg schüll het en kommentar gmacht)
 }
 
 function getTimeDifference(targetTime: string) {
@@ -43,6 +85,11 @@ export class LessonStatusIndicator extends PanelMenu.Button {
     _notifyItem: PopupMenu.PopupMenuItem;
     _reloadLessonsItem: PopupMenu.PopupMenuItem;
     _settings: Gio.Settings;
+    _redLine = new St.Widget({
+        style_class: 'time-indicator',
+        x_expand: true,
+        y_align: Clutter.ActorAlign.START,
+    });
 
     static {
         GObject.registerClass(this);
@@ -60,7 +107,10 @@ export class LessonStatusIndicator extends PanelMenu.Button {
         });
         this.add_child(this.label);
 
-        this._loadLessons().then(r => this._updateLesson());
+        this._loadLessons().then(r => {
+            this._updateLesson()
+            this._insertTimetable()
+        });
 
         // @ts-ignore
         this._notifyItem = this.menu.addAction(_('Notify'),
@@ -77,11 +127,116 @@ export class LessonStatusIndicator extends PanelMenu.Button {
         this._settings.connect('changed', () => this._sync());
 
         // @ts-ignore
-        // this._settings.connectObject('changed',
+        // this._settings.connectObject('changed',y
         //     () => this._sync(), this);
         this._sync();
         if (!this._timer) {
             this._ensureTimeout();
+        }
+    }
+
+    _insertTimetable() {
+        const tableWrapper = new St.Widget({
+            layout_manager: new Clutter.BinLayout(),
+            x_expand: true,
+            y_expand: true,
+        });
+
+
+        // @ts-ignore
+        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem("Timetable"));
+        const lessons = this.getCurrentDayLessons()
+
+        const table = new St.Widget({
+            style_class: 'stundenplan-table',
+            layout_manager: new Clutter.GridLayout({orientation: Clutter.Orientation.VERTICAL}),
+            reactive: true,
+        });
+        tableWrapper.add_child(table)
+
+        const layout = table.layout_manager;
+
+        // @ts-ignore
+        layout.attach(new St.Label({
+            text: 'Time',
+            style_class: 'stundenplan-field stundenplan-header'
+        }), 0, 0, 1, 1);
+        // @ts-ignore
+        layout.attach(new St.Label({
+            text: 'Lesson',
+            style_class: 'stundenplan-field stundenplan-header'
+        }), 1, 0, 1, 1);
+
+        let row = 1;
+        lessons.forEach(({start, end, name}, index, array) => {
+            const height = startEndTimeToHeight(start, end);
+            // @ts-ignore
+            layout.attach(new St.Label({
+                text: `${start}\n${end}`,
+                style_class: 'stundenplan-field stundenplan-time',
+                style: `height: ${height}px`
+            }), 0, row, 1, 1);
+            const {colour, backgroundColourHex, backgroundColour} = stringToColourAndBgColour(name);
+            // @ts-ignore
+            layout.attach(new St.Label({
+                text: name,
+                style_class: 'stundenplan-field stundenplan-lesson',
+                style: `color: ${colour}; height: ${height}px; background-color: ${backgroundColourHex};`
+            }), 1, row, 1, 1);
+
+            row++;
+            const nextLesson = array[index + 1]
+            if (nextLesson) {
+                const pauseHeight = startEndTimeToHeight(end, nextLesson.start);
+                // @ts-ignore
+                layout.attach(new St.Label({
+                    style_class: 'stundenplan-field',
+                    style: `height: ${pauseHeight}px`
+                }), 0, row, 1, 1);
+                // @ts-ignore
+                layout.attach(new St.Label({
+                    style_class: 'stundenplan-field',
+                    style: `height: ${pauseHeight}px`
+                }), 1, row, 1, 1);
+                row++;
+            }
+        });
+
+        this._insertTimetableRedLine(tableWrapper)
+        this._updateTimetableRedLine()
+
+        const item = new PopupMenu.PopupBaseMenuItem({reactive: false});
+        item.actor.add_child(tableWrapper);
+        //@ts-ignore
+        this.menu.addMenuItem(item);
+        //@ts-ignore
+        this.menu.connect('open-state-changed', (menu, isOpen) => {
+            if (isOpen) {
+                console.log("menu opened")
+            }
+        });
+    }
+
+    _insertTimetableRedLine(tableWrapper: St.Widget) {
+        tableWrapper.add_child(this._redLine)
+
+    }
+
+    _updateTimetableRedLine() {
+        let currentTime = getMinutesFromTimeString(new Date().toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+        }));
+        const lessons = this.getCurrentDayLessons();
+        const firstLessonOfDay = Math.min(...lessons.map(lesson => getMinutesFromTimeString(lesson.start)));
+        const lastLessonOfDay = Math.max(...lessons.map(lesson => getMinutesFromTimeString(lesson.end)));
+
+        if (currentTime >= firstLessonOfDay && currentTime <= lastLessonOfDay) {
+            this._redLine.set_y(17 + (34 * (currentTime - firstLessonOfDay) / 45))
+            this._redLine.visible = true
+        } else {
+            this._redLine.visible = false
         }
     }
 
@@ -92,6 +247,7 @@ export class LessonStatusIndicator extends PanelMenu.Button {
         this._timer = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, this._settings.get_int("update-interval"),
             () => {
                 this._lessonBefore = undefined;
+                this._updateTimetableRedLine();
                 this._updateLesson();
                 return GLib.SOURCE_CONTINUE;
             });
@@ -163,6 +319,18 @@ export class LessonStatusIndicator extends PanelMenu.Button {
         }
         this._lessonBefore = undefined;
         return "No more lessons today";
+    }
+
+    getCurrentDayLessons(): Lesson[] {
+        let dayNum = GLib.DateTime.new_now_local().get_day_of_week();
+        let day = getDayName(dayNum);
+
+        console.log(day)
+        console.log(this._lessons)
+
+        if (!(day in this._lessons)) return [];
+
+        return this._lessons[day];
     }
 
     buildLessonString(lesson: Lesson, action: "starts" | "ends") {
