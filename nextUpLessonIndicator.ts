@@ -32,13 +32,14 @@ function stringToColourAndBgColour(str: string): {
     str.split('').forEach(char => {
         hash = char.charCodeAt(0) + ((hash << 5) - hash)
     })
-    let backgroundColourHex = '#'
 
     const redValue = (hash >> (0 * 8)) & 0xff
-    backgroundColourHex += redValue.toString(16).padStart(2, '0')
     const greenValue = (hash >> (1 * 8)) & 0xff
-    backgroundColourHex += greenValue.toString(16).padStart(2, '0')
     const blueValue = (hash >> (2 * 8)) & 0xff
+
+    let backgroundColourHex = '#'
+    backgroundColourHex += redValue.toString(16).padStart(2, '0')
+    backgroundColourHex += greenValue.toString(16).padStart(2, '0')
     backgroundColourHex += blueValue.toString(16).padStart(2, '0')
 
     const isColourBright = (redValue + greenValue + blueValue) > 510
