@@ -1,0 +1,35 @@
+.stundenplan-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.stundenplan-header {
+    height: 17px;
+}
+
+.stundenplan-field {
+    color: white;
+    text-align: center;
+    border: 0 solid gray;
+    border-bottom-width: 1px;
+    vertical-align: center;
+    height: 100%;
+}
+
+.stundenplan-time {
+    font-weight: bold;
+    width: 50px;
+}
+
+.stundenplan-lesson {
+    text-align: center;
+    align-items: center;
+    width: 150px;
+}
+
+.time-indicator {
+    background-color: red;
+    height: 2px;
+    width: 200px;
+    z-index: 999;
+}

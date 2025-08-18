@@ -25,6 +25,7 @@ install: $(NAME).zip
 	@touch ~/.local/share/gnome-shell/extensions/$(NAME)@$(DOMAIN)
 	@rm -rf ~/.local/share/gnome-shell/extensions/$(NAME)@$(DOMAIN)
 	@mv dist ~/.local/share/gnome-shell/extensions/$(NAME)@$(DOMAIN)
+	@cp stylesheet.css ~/.local/share/gnome-shell/extensions/$(NAME)@$(DOMAIN)/stylesheet.css
 	@rm -rf dist
 	@rm -rf $(NAME).zip
 
