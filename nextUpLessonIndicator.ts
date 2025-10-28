@@ -11,7 +11,8 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 type Lesson = {
     start: string,
     end: string,
-    name: string
+    name: string,
+    colour?: string
 }
 
 const daysOfWeek = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
@@ -21,6 +22,29 @@ function getDayName(dayNumber: number): string {
         throw new Error("Invalid day number");
     }
     return daysOfWeek[dayNumber - 1];
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+    let hex = '#'
+    hex += r.toString(16).padStart(2, '0')
+    hex += g.toString(16).padStart(2, '0')
+    hex += b.toString(16).padStart(2, '0')
+    return hex
+}
+
+function hexToRgb(hex: string): { r: number, g: number, b: number } | null {
+    const match = hex.replace(/^#/, '').match(/^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+    if (!match) return null;
+    return {
+        r: parseInt(match[1], 16),
+        g: parseInt(match[2], 16),
+        b: parseInt(match[3], 16)
+    };
+}
+
+function getTextColour(r: number, g: number, b: number): string {
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness > 125 ? 'black' : 'white';
 }
 
 function stringToColourAndBgColour(str: string): {
@@ -37,17 +61,12 @@ function stringToColourAndBgColour(str: string): {
     const greenValue = (hash >> (1 * 8)) & 0xff
     const blueValue = (hash >> (2 * 8)) & 0xff
 
-    let backgroundColourHex = '#'
-    backgroundColourHex += redValue.toString(16).padStart(2, '0')
-    backgroundColourHex += greenValue.toString(16).padStart(2, '0')
-    backgroundColourHex += blueValue.toString(16).padStart(2, '0')
-
-    const isColourBright = (redValue + greenValue + blueValue) > 510
+    let backgroundColourHex = rgbToHex(redValue, greenValue, blueValue)
 
     return {
         backgroundColourHex,
         backgroundColour: {red: redValue, green: greenValue, blue: blueValue},
-        colour: isColourBright ? "black" : "white"
+        colour: getTextColour(redValue, greenValue, blueValue)
     }
 }
 
@@ -168,7 +187,7 @@ export class LessonStatusIndicator extends PanelMenu.Button {
         }), 1, 0, 1, 1);
 
         let row = 1;
-        lessons.forEach(({start, end, name}, index, array) => {
+        lessons.forEach(({start, end, name, colour}, index, array) => {
             const height = startEndTimeToHeight(start, end);
             // @ts-ignore
             layout.attach(new St.Label({
@@ -176,12 +195,26 @@ export class LessonStatusIndicator extends PanelMenu.Button {
                 style_class: 'stundenplan-field stundenplan-time',
                 style: `height: ${height}px`
             }), 0, row, 1, 1);
-            const {colour, backgroundColourHex, backgroundColour} = stringToColourAndBgColour(name);
+
+            const lessonStyle = {
+                colour: "",
+                backgroundColourHex: colour,
+            }
+
+            if (lessonStyle.backgroundColourHex) {
+                const {r, g, b} = hexToRgb(lessonStyle.backgroundColourHex)!;
+                lessonStyle.colour = getTextColour(r, g, b);
+            } else {
+                const result = stringToColourAndBgColour(name);
+                lessonStyle.colour = result.colour;
+                lessonStyle.backgroundColourHex = result.backgroundColourHex;
+            }
+
             // @ts-ignore
             layout.attach(new St.Label({
                 text: name,
                 style_class: 'stundenplan-field stundenplan-lesson',
-                style: `color: ${colour}; height: ${height}px; background-color: ${backgroundColourHex};`
+                style: `color: ${lessonStyle.colour}; height: ${height}px; background-color: ${lessonStyle.backgroundColourHex};`
             }), 1, row, 1, 1);
 
             row++;
