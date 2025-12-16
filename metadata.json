@@ -2,9 +2,9 @@
   "name": "Next Up Lesson",
   "description": "An extension made with TypeScript",
   "uuid": "next-up-lesson@liuuner.ch",
-  "url": "https://github.com/example/my-extension",
+  "url": "https://github.com/liuuner/next-up-lesson-extension",
   "settings-schema": "org.gnome.shell.extensions.next-up-lesson",
   "shell-version": [
-    "45"
+    "49"
   ]
 }
