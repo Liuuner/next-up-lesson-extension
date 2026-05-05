@@ -5,6 +5,7 @@
   "url": "https://github.com/liuuner/next-up-lesson-extension",
   "settings-schema": "org.gnome.shell.extensions.next-up-lesson",
   "shell-version": [
+    "50",
     "49",
     "45"
   ]
